@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive Data Structures & Algorithms (DSA) visualizer demonstrating Undo and Redo operations in a C-language text editor using dual stacks." />
+  <title>Undo & Redo Using Stacks in C | DSA Interactive Visualizer</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <span class="badge">DSA • C99</span>
+        <h1>Undo &amp; Redo Using Dual Stacks</h1>
+      </div>
+      <nav class="header-links" aria-label="Primary Navigation">
+        <a href="#simulator">Simulator</a>
+        <a href="#c-code">C Implementation</a>
+        <a href="#theory">Complexity &amp; Logic</a>
+        <button id="downloadCBtn" class="btn btn-outline btn-sm" title="Download standalone undo_redo.c">
+          Download <code>undo_redo.c</code>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero / Overview -->
+    <section class="intro-banner">
+      <p>
+        Explore how text editors implement <strong>Undo (Ctrl+Z)</strong> and <strong>Redo (Ctrl+Y)</strong> in <strong>C</strong> using two LIFO array-based stacks: <code>undoStack[MAX]</code> and <code>redoStack[MAX]</code>. Perform actions below to inspect stack pointer transitions (<code>top</code>) and highlight the corresponding C code in real time.
+      </p>
+    </section>
+
+    <!-- Interactive Simulator -->
+    <section id="simulator" class="grid-layout">
+      <!-- Left Column: Editor + Controls -->
+      <div class="card editor-card">
+        <div class="card-header">
+          <h2>1. Simulated C Text Buffer</h2>
+          <span class="status-pill" id="bufferLenTag">Length: 0 / 255</span>
+        </div>
+
+        <div class="buffer-display-wrap">
+          <label for="currentTextDisplay" class="sr-only">Current Text Buffer</label>
+          <div id="currentTextDisplay" class="buffer-box" aria-live="polite">
+            <span class="placeholder-text">[Empty Buffer — Type or run a preset below]</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="appendInput" class="input-label">Append String (<code>typeText(char *str)</code>):</label>
+          <div class="input-row">
+            <input
+              type="text"
+              id="appendInput"
+              maxlength="40"
+              placeholder="e.g., Hello World"
+              autocomplete="off"
+            />
+            <button id="typeBtn" class="btn btn-primary">Append Text</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="deleteCountInput" class="input-label">Delete Last N Chars (<code>deleteText(int n)</code>):</label>
+          <div class="input-row">
+            <input
+              type="number"
+              id="deleteCountInput"
+              min="1"
+              max="50"
+              value="5"
+            />
+            <button id="deleteBtn" class="btn btn-warning">Delete Chars</button>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button id="undoBtn" class="btn btn-secondary" disabled title="Shortcut: Ctrl+Z">
+            ↶ Undo <kbd>Ctrl+Z</kbd>
+          </button>
+          <button id="redoBtn" class="btn btn-secondary" disabled title="Shortcut: Ctrl+Y">
+            ↷ Redo <kbd>Ctrl+Y</kbd>
+          </button>
+          <button id="presetBtn" class="btn btn-ghost">Run Demo Sequence</button>
+          <button id="resetBtn" class="btn btn-danger-ghost">Reset All</button>
+        </div>
+
+        <div class="trace-box" id="operationLog" aria-live="polite">
+          <span class="trace-label">C Execution Trace:</span>
+          <code id="traceMessage">Initialized undoStack.top = -1, redoStack.top = -1, currentText = ""</code>
+        </div>
+      </div>
+
+      <!-- Right Column: Dual Stacks Visualizer -->
+      <div class="card stacks-card">
+        <div class="card-header">
+          <h2>2. Dual Stack Memory State (<code>MAX = 8</code>)</h2>
+          <span class="status-pill">LIFO Array Stacks</span>
+        </div>
+
+        <div class="stacks-grid">
+          <!-- Undo Stack -->
+          <div class="stack-column">
+            <div class="stack-meta">
+              <h3><code>undoStack</code></h3>
+              <span class="top-pointer" id="undoTopBadge">top = -1</span>
+            </div>
+            <div class="stack-flags">
+              <span id="undoEmptyFlag" class="flag flag-active">isEmpty() == 1</span>
+              <span id="undoFullFlag" class="flag">isFull() == 0</span>
+            </div>
+            <div class="stack-visual" id="undoStackVisual" role="list" aria-label="Undo Stack Contents">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Redo Stack -->
+          <div class="stack-column">
+            <div class="stack-meta">
+              <h3><code>redoStack</code></h3>
+              <span class="top-pointer" id="redoTopBadge">top = -1</span>
+            </div>
+            <div class="stack-flags">
+              <span id="redoEmptyFlag" class="flag flag-active">isEmpty() == 1</span>
+              <span id="redoFullFlag" class="flag">isFull() == 0</span>
+            </div>
+            <div class="stack-visual" id="redoStackVisual" role="list" aria-label="Redo Stack Contents">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- C Code Section -->
+    <section id="c-code" class="card code-section">
+      <div class="card-header">
+        <div>
+          <h2>3. Complete C Implementation (<code>undo_redo.c</code>)</h2>
+          <p class="subtext">Standard C99 implementation using static array stacks, <code>strcpy</code>/<code>strcat</code>, and interactive menu I/O.</p>
+        </div>
+        <div class="code-actions">
+          <button id="copyCodeBtn" class="btn btn-primary btn-sm">Copy C Code</button>
+        </div>
+      </div>
+
+      <div class="code-legend">
+        <span>Active Block Highlight:</span>
+        <span class="legend-tag" data-block="struct">Stack Struct &amp; Helpers</span>
+        <span class="legend-tag" data-block="type">typeText()</span>
+        <span class="legend-tag" data-block="delete">deleteText()</span>
+        <span class="legend-tag" data-block="undo">undo()</span>
+        <span class="legend-tag" data-block="redo">redo()</span>
+      </div>
+
+      <pre class="c-code-viewer"><code id="cCodeBlock"></code></pre>
+    </section>
+
+    <!-- Theory & Complexity -->
+    <section id="theory" class="theory-grid">
+      <div class="card">
+        <h2>4. How Dual-Stack State Management Works</h2>
+        <ul class="theory-list">
+          <li>
+            <strong>Edit Operation (Type / Delete):</strong> Before modifying <code>currentText</code>, push the current snapshot onto <code>undoStack</code>. Any new edit invalidates the forward timeline, so <code>redoStack.top</code> is reset to <code>-1</code>.
+          </li>
+          <li>
+            <strong>Undo Operation (<code>Ctrl+Z</code>):</strong> Check <code>!isEmpty(&amp;undoStack)</code>. Push <code>currentText</code> onto <code>redoStack</code>, then pop the top snapshot from <code>undoStack</code> into <code>currentText</code>.
+          </li>
+          <li>
+            <strong>Redo Operation (<code>Ctrl+Y</code>):</strong> Check <code>!isEmpty(&amp;redoStack)</code>. Push <code>currentText</code> back onto <code>undoStack</code>, then pop the top snapshot from <code>redoStack</code> into <code>currentText</code>.
+          </li>
+          <li>
+            <strong>Overflow Policy:</strong> When <code>undoStack</code> reaches <code>MAX - 1</code>, an array-based C stack can either reject new history or shift elements left (circular/drop-oldest policy) to retain recent states.
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>5. Time &amp; Space Complexity</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th>Pointer / Stack Step</th>
+                <th>String Copy Cost</th>
+                <th>Overall Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>push()</code> / <code>pop()</code></td>
+                <td>$O(1)$</td>
+                <td>$O(L)$ via <code>strcpy</code></td>
+                <td><strong>$O(L)$</strong></td>
+              </tr>
+              <tr>
+                <td><code>typeText()</code></td>
+                <td>$O(1)$ push + clear redo</td>
+                <td>$O(L)$</td>
+                <td><strong>$O(L)$</strong></td>
+              </tr>
+              <tr>
+                <td><code>undo()</code> / <code>redo()</code></td>
+                <td>$O(1)$ pop + $O(1)$ push</td>
+                <td>$O(L)$</td>
+                <td><strong>$O(L)$</strong></td>
+              </tr>
+              <tr>
+                <td><code>isEmpty()</code> / <code>isFull()</code></td>
+                <td>$O(1)$ integer check</td>
+                <td>None</td>
+                <td><strong>$O(1)$</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="complexity-note">
+          <strong>Space Complexity:</strong> <code>O(MAX × STR_LEN)</code> auxiliary memory for two static 2D character arrays (where <code>MAX</code> is stack capacity and <code>STR_LEN</code> is max buffer size).
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Data Structures &amp; Algorithms (DSA) — Stack Applications in C • Static Build Ready for Netlify</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
